@@ -1,0 +1,72 @@
+app:
+  build: ../../
+  dockerfile: docker/release/Dockerfile # path to docker file
+  links:
+    - db
+  volumes_from: # inherit the volumes from webroot
+    - webroot
+  environment: # these are all the same as db, rather than have default values, we specify all the values
+    DJANGO_SETTINGS_MODULE: todobackend.settings.release
+    MYSQL_HOST: db
+    MYSQL_USER: todo
+    MYSQL_PASSWORD: password
+    DEBUG: "true" # running debug
+  command: # entrypoint script
+    - uwsgi # run the uswgi container which inherits from webroot and it's socket to connect to wsgi
+    - "--socket /var/www/todobackend/todobackend.sock" # path to socket file later defind
+    - "--chmod-socket=666" # change nginx user permission
+    - "--module todobackend.wsgi" # djangoproject.wsgi
+    - "--master"
+    - "--die-on-term" # die on sigterm
+
+test:
+  image: todobackend-specs
+  links:
+    - nginx
+  environment:
+    URL: http://nginx:8000/todos/ # test path
+    JUNIT_REPORT_PATH: /reports/acceptance.xml
+    JUNIT_REPORT_STACK: 1
+
+
+nginx:
+  image: nginx
+  links:
+    - app
+  volumes:
+    - ./todobackend.conf:/etc/nginx/conf.d/todobackend.conf # inheriting the settings and the layout from webroot
+  ports:
+    - "8000:8000"
+  volumes_from:  #this is very important to map webroot to nginx
+    - webroot
+
+webroot:
+  build: ../../
+  dockerfile: docker/release/Dockerfile
+  volumes:
+    - /var/www/todobackend # this hosts the volumes for the app as well as the socket file for wsgi
+  entrypoint: "true" # exits without doing anything
+
+db:
+  image: mysql:8.0.1
+  expose:
+    - "3306"
+  # environment variables for the database that we are used to using
+  # this creates the variables for the database and gives mysql_user all privileges
+  environment:
+    MYSQL_DATABASE: todobackend
+    MYSQL_USER: todo
+    MYSQL_PASSWORD: password
+    MYSQL_ROOT_PASSWORD: password
+
+
+
+agent:
+  image: todo/ansible
+  volumes:
+    - ../../ansible/probe.yml:/ansible/site.yml
+  links:
+    - db
+  environment:
+    PROBE_HOST: "db"
+    PROBE_PORT: "3306"

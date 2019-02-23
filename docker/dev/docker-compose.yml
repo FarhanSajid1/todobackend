@@ -1,0 +1,52 @@
+test:
+  build: ../../ # this is a link to where the build context root is
+  dockerfile: docker/dev/Dockerfile
+  volumes_from:
+    - cache
+  links:
+    - db # referring to the mysql database
+
+  environment:
+    DJANGO_SETTINGS_MODULE: todobackend.settings.test # the mysql settings
+    MYSQL_HOST: db
+    MYSQL_USER: root
+    MYSQL_PASSWORD: password
+    TEST_OUTPUT_DIR: /reports
+
+builder:
+  build: ../../
+  dockerfile: docker/dev/Dockerfile
+  volumes:
+    - ../../target:/wheelhouse
+  volumes_from:
+    - cache
+  entrypoint: "entrypoint.sh"
+  command: ["pip", "wheel", "--no-index", "-f /build", "." ]
+
+
+# setting up a waiting client
+agent:
+  image: todo/ansible
+  volumes:
+    - ../../ansible/probe.yml:/ansible/site.yml # porting to the anisble playbook so it runs this
+  links:
+    - db
+  environment: # environment variables that we are going to pass into the database!
+    PROBE_HOST: "db"
+    PROBE_PORT: "3306"
+
+db:
+  image: mysql:8.0.1
+  hostname: db
+  expose:
+    - '3306' # default mysql port
+  environment:
+    MYSQL_ROOT_PASSWORD: password
+
+cache:
+  build: ../../
+  dockerfile: docker/dev/Dockerfile
+  volumes:
+    - /tmp/cache:/cache
+    - /build
+  entrypoint: "true"
