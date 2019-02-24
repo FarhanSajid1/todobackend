@@ -1,6 +1,6 @@
 app:
   build: ../../
-  dockerfile: docker/release/Dockerfile # path to docker file
+  dockerfile: docker/release/Dockerfile.orginal # path to docker file
   links:
     - db
   volumes_from: # inherit the volumes from webroot
@@ -30,11 +30,10 @@ test:
 
 
 nginx:
-  image: nginx
+  build: .
+  dockerfile: Dockerfile.orginal.nginx
   links:
     - app
-  volumes:
-    - ./todobackend.conf:/etc/nginx/conf.d/todobackend.conf # inheriting the settings and the layout from webroot
   ports:
     - "8000:8000"
   volumes_from:  #this is very important to map webroot to nginx
@@ -42,7 +41,7 @@ nginx:
 
 webroot:
   build: ../../
-  dockerfile: docker/release/Dockerfile
+  dockerfile: docker/release/Dockerfile.orginal
   volumes:
     - /var/www/todobackend # this hosts the volumes for the app as well as the socket file for wsgi
   entrypoint: "true" # exits without doing anything
@@ -63,10 +62,9 @@ db:
 
 agent:
   image: todo/ansible
-  volumes:
-    - ../../ansible/probe.yml:/ansible/site.yml
   links:
     - db
   environment:
     PROBE_HOST: "db"
     PROBE_PORT: "3306"
+  command: ["probe.yml"]

@@ -2,6 +2,7 @@ FROM python_centos2
 MAINTAINER Farhan Sajid <farhansajid7861@gmail.com>
 
 COPY target /wheelhouse
+VOLUME /reports
 
 # Install application
 RUN . /appenv/bin/activate &&\

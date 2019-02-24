@@ -1,0 +1,90 @@
+# Project variables
+PROJECT_NAME ?= todobackend
+ORG_NAME ?= kpacademy
+REPO_NAME ?= todobackend
+# ?= is used for environment variables and defaults to other name if not defined
+
+# Filenames
+DEV_COMPOSE_FILE := docker/dev/docker-compose.yml
+REL_COMPOSE_FILE := docker/release/docker-compose.yml
+
+# Docker compose Project Names
+REL_PROJECT := $(PROJECT_NAME)$(BUILD_ID)  # build id is being used for by jenkins
+DEV_PROJECT := $(strip $(REL_PROJECT))dev
+
+
+.PHONY: test build release clean
+
+# Error check variables
+INSPECT := $$(docker-compose -p $$1 $$2 ps -q $$3 | xargs -I args docker inspect -f "{ .State.ExitCode }" args)
+CHECK := @bash -c '\
+	if [[ $(INSPECT) ne 0 ]]; \
+	then exit $(INSPECT); fi' VALUE
+
+# for the docker-compose file's we will have to use the -f flag to show the exact path to that file
+
+test:
+	${INFO} "Pulling latest images..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) pull
+	${INFO} "Building images..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build --pull test
+	${INFO} "Building cache..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build cache
+	${INFO} "Ensuring database is ready..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) run --rm agent
+	${INFO} "Running the tests..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) up test
+	{INFO} "Copying reports!"
+	@ docker cp $$(docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) ps -q test):/reports/. reports
+	${INFO} "Checking to see the return code!"
+	${CHECK} $(DEV_PROJECT) $(DEV_COMPOSE_FILE) test
+	${INFO} "Testing Completed!"
+build:
+	${INFO} "Building builder image..."
+	@ docker-compose  -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build builder
+	${INFO} "Building Artifiacts..."
+	@ docker-compose  -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) up builder # remember we only used the builder
+	${INFO} "Copying artifacts to target folder..."
+	${CHECK} $(DEV_PROJECT) $(DEV_COMPOSE_FILE) builder
+	@ docker cp $$(docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) ps -q builder):/wheelhouse/. target
+	${INFO} "Building Artifiacts Completed!"
+
+release:
+	${INFO} "Beginning Acceptance Tests!.."
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) pull test # just pull todobackend-specs image
+	${INFO} "Beginning Acceptance Tests!.."
+	${INFO} "Building images..."
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build app
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build webroot
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build --pull nginx
+	${INFO} "Ensuring the database is ready..."
+	@ docker-compose -p $(REL_PROJECT)  -f $(REL_COMPOSE_FILE) up agent
+	${INFO} "Setting up environment"
+	@ docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) run --rm app manage.py migrate --noinput
+	@ docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) run --rm app manage.py collectstatic --noinput
+	${INFO} "Running tests..."
+	@ docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) up test
+	${INFO} "Sending reports"
+	@ docker cp $$(docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) ps -q test):/reports/acceptance.xml. reports
+	${INFO} "Success"
+
+clean:
+	${INFO} "Destroying development environment"
+	@docker-compose  -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) kill
+	docker-compose  -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) rm -f -v
+	docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) kill
+	docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) rm -f -v # -v is for removing volumes as well
+	docker images -q -f dangling=true -f label=application=todobackend=$(REPO_NAME) | xargs -I args docker rmi -f args
+	${INFO} "Complete"
+
+# Cosmetics
+YELLOW := "\e[31m" # bash value for yellow
+NC := "\e[0m" # bash value for no color
+
+# Shell functions
+INFO := @bash -c '\
+	printf $(YELLOW); \
+	echo "==> $$1"; \
+	printf $(NC) ' VALUE
+
+

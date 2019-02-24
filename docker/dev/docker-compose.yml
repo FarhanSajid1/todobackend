@@ -1,6 +1,6 @@
 test:
   build: ../../ # this is a link to where the build context root is
-  dockerfile: docker/dev/Dockerfile
+  dockerfile: docker/dev/Dockerfile.orginal
   volumes_from:
     - cache
   links:
@@ -15,9 +15,7 @@ test:
 
 builder:
   build: ../../
-  dockerfile: docker/dev/Dockerfile
-  volumes:
-    - ../../target:/wheelhouse
+  dockerfile: docker/dev/Dockerfile.orginal
   volumes_from:
     - cache
   entrypoint: "entrypoint.sh"
@@ -27,13 +25,14 @@ builder:
 # setting up a waiting client
 agent:
   image: todo/ansible
-  volumes:
-    - ../../ansible/probe.yml:/ansible/site.yml # porting to the anisble playbook so it runs this
+#  volumes:
+#    - ../../ansible/probe.yml:/ansible/site.yml # porting to the anisble playbook so it runs this
   links:
     - db
   environment: # environment variables that we are going to pass into the database!
     PROBE_HOST: "db"
     PROBE_PORT: "3306"
+  command: ["probe.yml"]
 
 db:
   image: mysql:8.0.1
@@ -45,7 +44,7 @@ db:
 
 cache:
   build: ../../
-  dockerfile: docker/dev/Dockerfile
+  dockerfile: docker/dev/Dockerfile.orginal
   volumes:
     - /tmp/cache:/cache
     - /build
