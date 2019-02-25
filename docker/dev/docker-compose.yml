@@ -15,7 +15,7 @@ test:
 
 builder:
   build: ../../
-  dockerfile: docker/dev/Dockerfile.orginal
+  dockerfile: docker/dev/Dockerfile
   volumes_from:
     - cache
   entrypoint: "entrypoint.sh"
@@ -44,7 +44,7 @@ db:
 
 cache:
   build: ../../
-  dockerfile: docker/dev/Dockerfile.orginal
+  dockerfile: docker/dev/Dockerfile
   volumes:
     - /tmp/cache:/cache
     - /build

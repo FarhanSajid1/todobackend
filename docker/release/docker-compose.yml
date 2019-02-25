@@ -1,6 +1,6 @@
 app:
   build: ../../
-  dockerfile: docker/release/Dockerfile.orginal # path to docker file
+  dockerfile: docker/release/Dockerfile # path to docker file
   links:
     - db
   volumes_from: # inherit the volumes from webroot
@@ -31,7 +31,7 @@ test:
 
 nginx:
   build: .
-  dockerfile: Dockerfile.orginal.nginx
+  dockerfile: Dockerfile.nginx
   links:
     - app
   ports:
@@ -41,7 +41,7 @@ nginx:
 
 webroot:
   build: ../../
-  dockerfile: docker/release/Dockerfile.orginal
+  dockerfile: docker/release/Dockerfile
   volumes:
     - /var/www/todobackend # this hosts the volumes for the app as well as the socket file for wsgi
   entrypoint: "true" # exits without doing anything
