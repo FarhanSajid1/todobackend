@@ -1,6 +1,6 @@
 test:
   build: ../../ # this is a link to where the build context root is
-  dockerfile: docker/dev/Dockerfile
+  dockerfile: docker/dev/Dockerfile.original
   volumes_from:
     - cache
   links:
@@ -15,7 +15,7 @@ test:
 
 builder:
   build: ../../
-  dockerfile: docker/dev/Dockerfile
+  dockerfile: docker/dev/Dockerfile.original
   volumes_from:
     - cache
   entrypoint: "entrypoint.sh"
@@ -44,7 +44,7 @@ db:
 
 cache:
   build: ../../
-  dockerfile: docker/dev/Dockerfile
+  dockerfile: docker/dev/Dockerfile.original
   volumes:
     - /tmp/cache:/cache
     - /build

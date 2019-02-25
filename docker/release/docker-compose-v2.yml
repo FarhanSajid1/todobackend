@@ -51,7 +51,7 @@ services:
 #  webroot:
 #    build:
 #      context: ../../
-#      dockerfile: docker/release/Dockerfile.orginal
+#      dockerfile: docker/release/Dockerfile.original.orginal
 #    volumes:
 #      - /var/www/todobackend # this hosts the volumes for the app as well as the socket file for wsgi
 #    entrypoint: "true" # exits without doing anything

@@ -6,8 +6,8 @@ DOCKER_REGISTRY ?= docker.io
 # ?= is used for environment variables and defaults to other name if not defined
 
 # Filenames
-DEV_COMPOSE_FILE := docker/dev/docker-compose.yml
-REL_COMPOSE_FILE := docker/release/docker-compose.yml
+DEV_COMPOSE_FILE := docker/dev/docker-compose-v2.yml
+REL_COMPOSE_FILE := docker/release/docker-compose-v2.yml
 
 # Docker compose Project Names
 REL_PROJECT := $(PROJECT_NAME)$(BUILD_ID)  # build id is being used for by jenkins
@@ -38,13 +38,15 @@ CHECK := @bash -c '\
 # for the docker-compose file's we will have to use the -f flag to show the exact path to that file
 
 test:
+	${INFO} "Building cache volume..."
+	@ docker volume create --name cache # create a volume named cache
 	${INFO} "Building images..."
 	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build
 	${INFO} "Ensuring database is ready..."
 	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) run --rm agent
 	${INFO} "Running the tests..."
 	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) up test
-	{INFO} "Copying reports!"
+	${INFO} "Copying reports!"
 	@ docker cp $$(docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) ps -q test):/reports/. reports
 	${CHECK} $(DEV_PROJECT) $(DEV_COMPOSE_FILE) test
 	${INFO} "Testing Completed!"
@@ -68,16 +70,12 @@ release:
 	@ docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) run --rm app manage.py collectstatic --noinput
 	${INFO} "Running tests..."
 	@ docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) up test
-	${INFO} "Sending reports"
-	@ docker cp $$(docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) ps -q test):/reports/acceptance.xml. reports
 	${INFO} "Success"
 
 clean:
 	${INFO} "Destroying development environment"
-	@docker-compose  -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) kill
-	docker-compose  -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) rm -f -v
-	docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) kill
-	docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) rm -f -v # -v is for removing volumes as well
+	@docker-compose  -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) down -v
+	docker-compose  -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) down -v
 	docker images -q -f dangling=true -f label=application=todobackend=$(REPO_NAME) | xargs -I args docker rmi -f args
 	${INFO} "Complete"
 
