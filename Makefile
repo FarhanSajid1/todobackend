@@ -6,8 +6,8 @@ DOCKER_REGISTRY ?= docker.io
 # ?= is used for environment variables and defaults to other name if not defined
 
 # Filenames
-DEV_COMPOSE_FILE := docker/dev/docker-compose.yml
-REL_COMPOSE_FILE := docker/release/docker-compose.yml
+DEV_COMPOSE_FILE := docker/dev/docker-compose-v2.yml
+REL_COMPOSE_FILE := docker/release/docker-compose-v2.yml
 
 # Docker compose Project Names
 REL_PROJECT := $(PROJECT_NAME)$(BUILD_ID)  # build id is being used for by jenkins
