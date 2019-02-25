@@ -46,6 +46,7 @@ services:
       PROBE_HOST: "db"
       PROBE_PORT: "3306"
     command: ["probe.yml"]
+
   db:
     image: mysql:8.0.1
     hostname: db
