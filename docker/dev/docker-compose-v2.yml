@@ -37,7 +37,7 @@ services:
 
   # setting up a waiting client
   agent:
-    image: todo/ansible
+    image: farhansajid2/ansible
   #  volumes:
   #    - ../../ansible/probe.yml:/ansible/site.yml # porting to the anisble playbook so it runs this
     links:

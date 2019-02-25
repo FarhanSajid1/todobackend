@@ -28,7 +28,7 @@ services:
       - "--die-on-term" # die on sigterm
 
   test:
-    image: todobackend-specs
+    image: farhansajid2/todobackend-specs
     links:
       - nginx
     environment:
@@ -71,7 +71,7 @@ services:
 
 
   agent:
-    image: todo/ansible
+    image: farhansajid2/ansible
     links:
       - db
     environment:

@@ -1,4 +1,4 @@
-FROM python_centos2:latest
+FROM farhansajid2/todobackend-base
 MAINTAINER Farhan Sajid <farhansajid7861@gmail.com>
 
 

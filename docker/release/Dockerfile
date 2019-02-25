@@ -1,4 +1,4 @@
-FROM python_centos2
+FROM farhansajid2/todobackend-base
 MAINTAINER Farhan Sajid <farhansajid7861@gmail.com>
 
 COPY target /wheelhouse
