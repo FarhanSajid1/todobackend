@@ -1,6 +1,6 @@
 test:
   build: ../../ # this is a link to where the build context root is
-  dockerfile: docker/dev/Dockerfile.orginal
+  dockerfile: docker/dev/Dockerfile
   volumes_from:
     - cache
   links:
