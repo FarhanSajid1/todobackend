@@ -59,7 +59,6 @@ build:
 	${INFO} "Building Artifiacts..."
 	@ docker-compose  -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) up builder # remember we only used the builder
 	${INFO} "Copying artifacts to target folder..."
-	${CHECK} $(DEV_PROJECT) $(DEV_COMPOSE_FILE) builder
 	@ docker cp $$(docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) ps -q builder):/wheelhouse/. target
 	${INFO} "Building Artifiacts Completed!"
 
